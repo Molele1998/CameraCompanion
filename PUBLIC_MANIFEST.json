@@ -1,0 +1,219 @@
+{
+  "format": "camera-companion-public-source-manifest",
+  "version": "0.2.2",
+  "note": "Covers every source release file except this manifest itself",
+  "files": {
+    ".gitignore": {
+      "bytes": 214,
+      "sha256": "fa5c1385c9d7848b7cb8a96f9959ee888476dbc470eebc52c5262a366147c354"
+    },
+    "assets/dji.png": {
+      "bytes": 3837,
+      "sha256": "fca4145a0881a4370cbbe6e7af89ce065810813f7b48cc379485d3b8d6403a2b"
+    },
+    "assets/gps.png": {
+      "bytes": 2833,
+      "sha256": "eff4fe07dfc39e71000374ebd20e5f93167c4c200b510be87362b27292cf6447"
+    },
+    "assets/nikon.png": {
+      "bytes": 3290,
+      "sha256": "e488ae9ef8b39ae2d0f34402f751027c5a2d3eeb327a09fcaeda1379c0050ae7"
+    },
+    "assets/settings.png": {
+      "bytes": 4795,
+      "sha256": "f389e42529963c195aeeba4aeb453897410f8271636a475932768a2b62857562"
+    },
+    "assets/sony.png": {
+      "bytes": 3454,
+      "sha256": "764a817bceb5a2dd0f113d86a8e9f9d245b46f435ccfc18270414d26b4c55c8f"
+    },
+    "assets/timer.png": {
+      "bytes": 3952,
+      "sha256": "584f394656179d038bf111848e9aad28a18bc2e8b36cef235d427b97f5bcd518"
+    },
+    "CameraCompanion/AppIcons.h": {
+      "bytes": 90306,
+      "sha256": "adb17b9fc9d31280c20a31766e1a6eb7681a16009fc2266b4ddecf06cd3cc6c8"
+    },
+    "CameraCompanion/BoardHardware.cpp": {
+      "bytes": 10276,
+      "sha256": "4df8392b2449266a75defb262adada5259db2a8ab7901263075838c64e9eb225"
+    },
+    "CameraCompanion/BoardHardware.h": {
+      "bytes": 1610,
+      "sha256": "c0a67b611ef13969b4bc509a90b0c319021abefea5267a45eaaf63a4f603d7e0"
+    },
+    "CameraCompanion/BufferedDisplay.cpp": {
+      "bytes": 2368,
+      "sha256": "367e5fc1eecdfb1d85356da86cbfa4694130b422107669054ab7abcab1814b92"
+    },
+    "CameraCompanion/BufferedDisplay.h": {
+      "bytes": 1283,
+      "sha256": "5cb54f65b80627715872e8301335c8eed2c4ba75b161ea6419cbd9a11f7ffb7f"
+    },
+    "CameraCompanion/CameraCompanion.ino": {
+      "bytes": 296,
+      "sha256": "6c6cb60271ddc397a360a27fc1eeed4c404f51b354707732c8365f23e82cd5ec"
+    },
+    "CameraCompanion/CameraModel.h": {
+      "bytes": 7386,
+      "sha256": "a680133729fb9eb1aa746ac0031edb63ff3b8ccaa0a755b4613a0e887b54be25"
+    },
+    "CameraCompanion/CameraRadio.cpp": {
+      "bytes": 32328,
+      "sha256": "d904c3e17888e8985e93d9ce1abd524944fe4eeeb814e1d1228a1bb2f2b415fc"
+    },
+    "CameraCompanion/CameraRadio.h": {
+      "bytes": 2404,
+      "sha256": "66e1dfa4a1406594fca86b8be5325cc45ca72ce0eb481510d2c2e86951caa770"
+    },
+    "CameraCompanion/CameraScene.h": {
+      "bytes": 17228,
+      "sha256": "940a88545ae03c71b80e09e9887e9a1eee0559a6faa29f6230f41885f6fcd0d3"
+    },
+    "CameraCompanion/CameraUi.cpp": {
+      "bytes": 14643,
+      "sha256": "61e542c9555a05d5d86b4d3a4bd73bccb1570d1e230a590424a57d7a78e96e48"
+    },
+    "CameraCompanion/CameraUi.h": {
+      "bytes": 60,
+      "sha256": "d6e79265932762fda75ff6b4f18fa95026e4bab5030efb609299db7a03c30fc4"
+    },
+    "CameraCompanion/CameraUiLogic.h": {
+      "bytes": 14035,
+      "sha256": "a02d0c0a717cf6d8d3e7a992737b5f3235dc41079830d06083ed2b249d8d0462"
+    },
+    "CameraCompanion/ChineseFont.h": {
+      "bytes": 1446609,
+      "sha256": "b2c517dc9dbbfa27a31226d33671b848ebe64a8334c6f9a5d2db25a2cb266c5e"
+    },
+    "CameraCompanion/licenses/NotoSansSC-OFL.txt": {
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    "CameraCompanion/StatusIcons.h": {
+      "bytes": 1551,
+      "sha256": "c198ee51f5086d114059cf223f9105e32e9b3fb1ab80b6e2a9b7f6a4ea46569d"
+    },
+    "docs/FONT.md": {
+      "bytes": 1376,
+      "sha256": "ef727ed6c72927a25ecc4ef28316d33b7d7f41eb6703590a5a0176b7fba714db"
+    },
+    "docs/HARDWARE.md": {
+      "bytes": 1242,
+      "sha256": "6a1c3fe759bee647b976999a3a8a931cae24978cd1671b78e1e08f382dcad8cc"
+    },
+    "docs/pairing-preview.png": {
+      "bytes": 11956,
+      "sha256": "3f4a9c09bf9b793b294d18f746288793f61b5d983f470c6e7bbba33db622ac83"
+    },
+    "docs/PRIVACY.md": {
+      "bytes": 1529,
+      "sha256": "f2777bb32fbbddc697c9c4c7f7350f8fe9d09e621eccd192a4f9b9596a293f45"
+    },
+    "docs/PROTOCOL.md": {
+      "bytes": 2593,
+      "sha256": "cee4024f46307f4ba5baaa553bb371cf76e53a0daa2fd338cce87d7ea36faf08"
+    },
+    "docs/status-bar.png": {
+      "bytes": 6059,
+      "sha256": "1c53828d15cb9466b828559213413b1352d3b3f7dded369f45701cfbe8c6ce5b"
+    },
+    "docs/ui-preview.png": {
+      "bytes": 138271,
+      "sha256": "274656307c160acce303d251ef2aa092ce154885ebde0fe2387d8d0d1f16b4c4"
+    },
+    "docs/verification.json": {
+      "bytes": 4260,
+      "sha256": "c1da0ca9120f096d7894081ff24bfb1a0fde1ccf88797391a9f7b4ca79ac70df"
+    },
+    "LICENSE": {
+      "bytes": 1086,
+      "sha256": "198c50db5fa3f81e18bdc07e7cc33f76fecf6805fcfa32af8b2f4036df0967d4"
+    },
+    "licenses/alphaloc-Apache-2.0.txt": {
+      "bytes": 11558,
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+    },
+    "licenses/camera-gps-link-MIT.txt": {
+      "bytes": 1070,
+      "sha256": "92511f782c756d278247799d51498739e2d9ee426b24d642415c9916d167b70a"
+    },
+    "licenses/esp32-a7iv-rc-MIT.txt": {
+      "bytes": 1098,
+      "sha256": "738d55e65d6fa1eaa681c253274bd65e0c400c7a4ee9e443289429a7b367a738"
+    },
+    "licenses/furble-MIT.txt": {
+      "bytes": 1090,
+      "sha256": "536fcb0040cfd586f7f046279e40cfbdbe03de8cff7596651d2fa7fee32b6c1f"
+    },
+    "licenses/NotoSansSC-OFL.txt": {
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    },
+    "README.md": {
+      "bytes": 6547,
+      "sha256": "b1fcc7bc6c0943e84568633d5ea9e3f778f032a766446c0d51bf8202045eeac3"
+    },
+    "requirements.txt": {
+      "bytes": 15,
+      "sha256": "afef94cb54188a888fb6b5b25f2997dc269414d0f5523f00b734ed9b0e3020ad"
+    },
+    "tests/RadioHost.h": {
+      "bytes": 8793,
+      "sha256": "a75f502d238f41a14db9f36b07ca04a27924f5fd97652021ec8ea56b41ff230c"
+    },
+    "tests/README.md": {
+      "bytes": 1208,
+      "sha256": "3a05f9c7bfca4c8452cb3d4de6f4cd8b75ce6a69a25a70c50802b020b1f58d31"
+    },
+    "tests/run_tests.py": {
+      "bytes": 1375,
+      "sha256": "8d0dd64ec02ffcf2479e98b7f384cde966aca19d9888054e1c83d42d8083764e"
+    },
+    "tests/scene_fakes/Arduino_GFX_Library.h": {
+      "bytes": 3279,
+      "sha256": "7b4c4dcbfba5b8a0cc65162391c7f0c507460740b9aa828806e5837bc44d42af"
+    },
+    "tests/test_model.cpp": {
+      "bytes": 2870,
+      "sha256": "8bcba464a653ae8e470a810077bbe951e0a82f207d177ce482dfb537db8e8e51"
+    },
+    "tests/test_radio.cpp": {
+      "bytes": 13793,
+      "sha256": "944da2e7b2d0a223d360199ac974a84fb9af207e42994c46e154c333313412c8"
+    },
+    "tests/test_scene.cpp": {
+      "bytes": 6833,
+      "sha256": "b25803431fc29a7adfee13936c85c723412bb4209d14b26a955d3b02e4e922c5"
+    },
+    "tests/test_ui.cpp": {
+      "bytes": 7894,
+      "sha256": "ef9457f9c2b46894f8d840831de98af34ac51776b611ca8959f993c0a93e337b"
+    },
+    "tests/UiHost.h": {
+      "bytes": 2245,
+      "sha256": "ecc0d5761eec3758fb3d41222ae4262da3a8ec36163dd41f7fdf447eecac7a2d"
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "bytes": 2311,
+      "sha256": "e36d102c73161078b2276fa0dff1ce09196776e24fcd71fcdc6257a483807d39"
+    },
+    "tools/generate_font.py": {
+      "bytes": 5740,
+      "sha256": "7cb482eec0249d9c982045021a40a7ede35be0b033354539dae482fc08110892"
+    },
+    "tools/generate_icons.py": {
+      "bytes": 5520,
+      "sha256": "6de416f850ffbdf977a1b8bda8577a3aead8992daaa9be4044bdd7c7af406b76"
+    },
+    "tools/privacy_audit.py": {
+      "bytes": 6782,
+      "sha256": "c1745d89c67a80c74ee45816ef1eaf5f9c9591e7efd4002663b2940da67e7c6f"
+    },
+    "tools/render_preview.py": {
+      "bytes": 1823,
+      "sha256": "90f7173ac555059611be50c58b93e0da8c2f5a8295d4734f8427180a0f2d2aeb"
+    }
+  }
+}

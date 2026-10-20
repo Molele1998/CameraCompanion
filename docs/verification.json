@@ -1,0 +1,88 @@
+{
+  "recorded_date": "2026-10-20",
+  "firmware_version": "0.2.2",
+  "variant": "Public source with OFL-licensed bitmap glyphs",
+  "compile": {
+    "result": "passed",
+    "arduino_esp32": "3.3.12",
+    "esp_idf": "5.5.5",
+    "gfx_library_for_arduino": "1.6.9",
+    "ble_backend": "core native NimBLE C API",
+    "fqbn": "esp32:esp32:esp32c6:CDCOnBoot=cdc,FlashSize=8M,PartitionScheme=default_8MB",
+    "program_bytes": 1155054,
+    "application_partition_max_bytes": 3342336,
+    "static_ram_bytes": 39184,
+    "linker_reported_remaining_ram_bytes": 288496,
+    "compiled_source_matches": true,
+    "source_sha256": {
+      "AppIcons.h": "adb17b9fc9d31280c20a31766e1a6eb7681a16009fc2266b4ddecf06cd3cc6c8",
+      "BoardHardware.cpp": "4df8392b2449266a75defb262adada5259db2a8ab7901263075838c64e9eb225",
+      "BoardHardware.h": "c0a67b611ef13969b4bc509a90b0c319021abefea5267a45eaaf63a4f603d7e0",
+      "BufferedDisplay.cpp": "367e5fc1eecdfb1d85356da86cbfa4694130b422107669054ab7abcab1814b92",
+      "BufferedDisplay.h": "5cb54f65b80627715872e8301335c8eed2c4ba75b161ea6419cbd9a11f7ffb7f",
+      "CameraCompanion.ino": "6c6cb60271ddc397a360a27fc1eeed4c404f51b354707732c8365f23e82cd5ec",
+      "CameraModel.h": "a680133729fb9eb1aa746ac0031edb63ff3b8ccaa0a755b4613a0e887b54be25",
+      "CameraRadio.cpp": "d904c3e17888e8985e93d9ce1abd524944fe4eeeb814e1d1228a1bb2f2b415fc",
+      "CameraRadio.h": "66e1dfa4a1406594fca86b8be5325cc45ca72ce0eb481510d2c2e86951caa770",
+      "CameraScene.h": "940a88545ae03c71b80e09e9887e9a1eee0559a6faa29f6230f41885f6fcd0d3",
+      "CameraUi.cpp": "61e542c9555a05d5d86b4d3a4bd73bccb1570d1e230a590424a57d7a78e96e48",
+      "CameraUi.h": "d6e79265932762fda75ff6b4f18fa95026e4bab5030efb609299db7a03c30fc4",
+      "CameraUiLogic.h": "a02d0c0a717cf6d8d3e7a992737b5f3235dc41079830d06083ed2b249d8d0462",
+      "ChineseFont.h": "b2c517dc9dbbfa27a31226d33671b848ebe64a8334c6f9a5d2db25a2cb266c5e",
+      "StatusIcons.h": "c198ee51f5086d114059cf223f9105e32e9b3fb1ab80b6e2a9b7f6a4ea46569d"
+    }
+  },
+  "host_checks": {
+    "result": "passed",
+    "suites": [
+      "model",
+      "actual_radio_source_with_fake_NimBLE",
+      "actual_UI_source_with_fake_touch",
+      "actual_scene_renderer"
+    ],
+    "rendered_scenes": 252,
+    "layout_errors": 0,
+    "status_pixel_cases": 8,
+    "status_elements_checked": 32,
+    "coverage": "MTU/security/500ms ordering, PIN display and explicit comparison, stale replies/touches, cancellation, timeouts, SMP reason, pinned App UUID bytes, capture scheduling, synthetic GPS and reconnect states",
+    "hardware_accessed": false
+  },
+  "hardware_evidence": {
+    "camera_model": "Sony A7 IV / ILCE-7M4",
+    "camera_firmware": "1.01",
+    "development_firmware": "Connection and camera control reported successful after 0.2.2 delivery",
+    "specific_command_or_file_results": "Not supplied",
+    "gps_exif_interval_long_run_reconnect": "Not yet independently confirmed",
+    "public_font_variant_physical_screen": "Not retested",
+    "uploaded_by_packaging_process": false
+  },
+  "development_comparison": {
+    "byte_identical_files": [
+      "AppIcons.h",
+      "BoardHardware.cpp",
+      "BoardHardware.h",
+      "BufferedDisplay.cpp",
+      "BufferedDisplay.h",
+      "CameraCompanion.ino",
+      "CameraModel.h",
+      "CameraRadio.cpp",
+      "CameraRadio.h",
+      "CameraScene.h",
+      "CameraUi.cpp",
+      "CameraUi.h",
+      "CameraUiLogic.h",
+      "StatusIcons.h"
+    ],
+    "changed_files": [
+      "ChineseFont.h"
+    ],
+    "changed_scope": "Open font bitmap data and license header only; runtime glyph reader and all other firmware source files identical"
+  },
+  "privacy": {
+    "packaging": "Explicit source/test/icon/license selection; rewritten public docs",
+    "excluded": "Private configuration, device dumps/identifiers, raw logs, build outputs, local environment paths, original system-font glyph data, Git history",
+    "images": "Regenerated from public renderer using synthetic fixtures; metadata scanned",
+    "upstream_public_attribution": "Retained in license notices",
+    "checks": "tools/privacy_audit.py; final archive scan and file manifest also recorded outside repository"
+  }
+}
