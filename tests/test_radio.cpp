@@ -3,11 +3,13 @@
 #include <cassert>
 using namespace CameraRadio;
 void clean(){live=Snapshot();published=Snapshot();capture=Camera::Capture();h=Handles();clearOp();
+  clearControls();holdExpires=0;
   conn=BLE_HS_CONN_HANDLE_NONE;wanted=connecting=wasReady=watching=watchFound=disconnectWanted=false;retries=0;
   retryAt=0;generation=10;testMs=10000;lastSimSample=UINT64_MAX;wire=HostState();stopWanted=false;xQueueReset(commands);}
-void ready(){clean();conn=42;live.link=Link::Ready;live.encrypted=live.remote=live.location=true;h.control=10;h.loc=20;}
+void ready(){clean();conn=42;live.session=generation;live.link=Link::Ready;live.encrypted=live.remote=live.location=live.notifications=true;h.control=10;h.status=11;h.loc=20;publish();}
 void ack(int status=0){ble_gatt_error e{};e.status=status;wrote(conn,&e,nullptr,context());}
 void mtuAck(int status=0){ble_gatt_error e{};e.status=status;mtuDone(conn,&e,128,context());}
+void notify(std::initializer_list<uint8_t> bytes,uint16_t attr=11,uintptr_t gen=0){os_mbuf om{{bytes}};ble_gap_event e;e.type=BLE_GAP_EVENT_NOTIFY_RX;e.notify_rx={conn,attr,&om};gap(&e,gen?reinterpret_cast<void*>(gen):context());}
 int main(){assert(begin());assert(ble_hs_cfg.sm_bonding==1 && ble_hs_cfg.sm_mitm==1 && ble_hs_cfg.sm_sc==1 && ble_hs_cfg.sm_io_cap==BLE_HS_IO_DISPLAY_YESNO);assert(ble_hs_cfg.store_status_cb(nullptr,nullptr)==BLE_HS_ENOMEM);
   clean();live.link=Link::Scanning;
   const uint8_t raw[]={15,255,0x2d,1,3,0,0x64,0,'A','1',0x22,0xc2,0,0x21,0x40,0,10,9,'I','L','C','E','-','7','M','4','X'};
@@ -109,5 +111,58 @@ int main(){assert(begin());assert(ble_hs_cfg.sm_bonding==1 && ble_hs_cfg.sm_mitm
   ble_uuid128_t remoteControl{{BLE_UUID_TYPE_128},{0xfb,0x34,0x9b,0x5f,0x80,0x00,0x00,0x80,0x00,0x10,0x00,0x00,0x01,0xff,0x00,0x00}};
   assert(uuid(&remoteService.u,0xff00,0xff00) && uuid(&locationService.u,0xdd00,0xdd00) && uuid(&remoteControl.u,0xff01,0xff00));
   assert(!uuid(&remoteService.u,0xdd00,0xdd00) && !uuid(&remoteControl.u,0xff02,0xff00));
-  std::puts("PASS: actual radio source: App mode 1 MTU/security/500ms ordering, pairing UI replies/stale tokens/cancel, diagnostics, capture/GPS/stop/reconnect");
+  // A write ACK never creates a movie state. A genuine current-link FF02
+  // notification can arrive before the button's UP ACK and must be retained.
+  ready();assert(requestRecord());tick(nullptr);assert(op==Op::Button && wire.writes.back().data==std::vector<uint8_t>({1,0x0f}));
+  ack();assert(live.video==Camera::Video::Unknown && live.recordPending);
+  notify({2,0xd5,0x20},99);notify({2,0xd5,0x20},11,generation-1);notify({2,0xd5,0x21});notify({2,0xd5});notify({1,0xd5,0x20});assert(live.video==Camera::Video::Unknown);
+  notify({2,0xd5,0x20});const auto observed=live.videoSince;assert(live.video==Camera::Video::Recording && live.recordPending && observed==testMs);
+  testMs+=121;tick(nullptr);assert(wire.writes.back().data==std::vector<uint8_t>({1,0x0e}));ack();tick(nullptr);assert(!live.recordPending && live.video==Camera::Video::Recording);
+  notify({2,0xd5,0x20});assert(live.videoSince==observed);notify({2,0xd5,0});assert(live.video==Camera::Video::Stopped && live.videoSince==0);
+  // Physical REC updates are visible even with no pending board command.
+  publish();assert(published.video==Camera::Video::Stopped && published.lastVideoNotify==testMs);
+  assert(requestRecord());notify({2,0xd5,0x20});tick(nullptr);assert(wire.writes.size()==2 && live.error==-62); // State changed while queued, no accidental stop.
+  ready();notify({2,0xd5,0});publish();live.sim=true;nextGps=0;tick(nullptr);assert(op==Op::Location);
+  assert(requestRecord());tick(nullptr);assert(live.recordPending && !remotePress.downIssued);notify({2,0xd5,0x20});ack();tick(nullptr);
+  assert(wire.writes.size()==1 && !live.recordPending && live.video==Camera::Video::Recording && live.error==-62); // State changed while ATT was busy, still no toggle.
+  // No notification -> unknown, no automatic retry or assumed success.
+  ready();assert(requestRecord());tick(nullptr);ack();testMs+=121;tick(nullptr);ack();testMs+=6000;tick(nullptr);
+  assert(!live.recordPending && live.video==Camera::Video::Unknown && live.error==-61 && wire.writes.size()==2);
+  testMs+=10000;tick(nullptr);assert(wire.writes.size()==2);notify({2,0xd5,0x20});assert(live.video==Camera::Video::Recording);
+  ready();notify({2,0xd5,0});publish();assert(requestRecord());tick(nullptr);ack();notify({2,0xd5,0});testMs+=121;tick(nullptr);ack();tick(nullptr);assert(live.recordPending); // Unchanged status is not a start confirmation.
+  // A failed write may have reached the peer: release it; never toggle again.
+  ready();assert(requestRecord());tick(nullptr);ack(5);tick(nullptr);assert(wire.writes.size()==2 && wire.writes.back().data[1]==0x0e && !live.recordPending);ack();tick(nullptr);assert(live.video==Camera::Video::Unknown);
+  ready();assert(pressRemote(Camera::RemoteKey::C1));tick(nullptr);ack();testMs+=121;tick(nullptr);ack(5);assert(wire.terminate==1 && !live.session);
+  // Every custom/lens key uses the same sequencer and its own UP bytes.
+  for(auto key:{Camera::RemoteKey::AfOn,Camera::RemoteKey::C1,Camera::RemoteKey::FocusNear,Camera::RemoteKey::FocusFar,Camera::RemoteKey::ZoomWide,Camera::RemoteKey::ZoomTele}){
+    ready();assert(pressRemote(key));tick(nullptr);assert(remotePress.key==key);ack();testMs+=121;tick(nullptr);uint8_t bytes[3]{};const size_t n=Camera::remotePayload(key,false,bytes);
+    assert(wire.writes.back().data==std::vector<uint8_t>(bytes,bytes+n));ack();tick(nullptr);assert(!remotePress.busy());}
+  ready();const auto hold=holdRemote(Camera::RemoteKey::FocusNear);assert(hold);tick(nullptr);ack();testMs+=200;keepRemoteHeld(hold);tick(nullptr);assert(wire.writes.size()==1);
+  for(int i=0;i<12;++i)assert(request(Command::SetSim));assert(!request(Command::SetSim));releaseRemote(hold);tick(nullptr);
+  assert(op==Op::Button && wire.writes.back().data==std::vector<uint8_t>({2,0x6a,0}));ack();tick(nullptr);assert(!remotePress.busy());
+  // Release before the host gets to the queue, or an expired lease, must not
+  // briefly run the lens later. Lost renewals stop an active hold as well.
+  ready();auto tokenHold=holdRemote(Camera::RemoteKey::ZoomTele);releaseRemote(tokenHold);tick(nullptr);assert(wire.writes.empty());
+  ready();tokenHold=holdRemote(Camera::RemoteKey::ZoomTele);testMs+=401;tick(nullptr);assert(wire.writes.empty());
+  ready();tokenHold=holdRemote(Camera::RemoteKey::ZoomTele);tick(nullptr);ack();testMs+=401;tick(nullptr);assert(wire.writes.back().data==std::vector<uint8_t>({2,0x44,0}));ack();
+  ready();tokenHold=holdRemote(Camera::RemoteKey::AfOn);tick(nullptr);ack();
+  for(int i=0;i<50;++i){testMs+=200;keepRemoteHeld(tokenHold);tick(nullptr);}assert(wire.writes.size()==2 && remotePress.pending==Camera::KeyStep::Up);ack();
+  // Stop has a path outside the ordinary queue, including an outstanding DOWN.
+  ready();tokenHold=holdRemote(Camera::RemoteKey::C1);tick(nullptr);stop();tick(nullptr);assert(op==Op::Button);ack();tick(nullptr);assert(wire.writes.back().data==std::vector<uint8_t>({1,0x20}));ack();
+  // Capture and new control are mutually exclusive; lens keys remain usable
+  // while recording. Location writes wait for release, then resume normally.
+  ready();capture.start(testMs,plan);assert(requestRecord());tick(nullptr);assert(!live.recordPending && remotePress.key==Camera::RemoteKey::None);
+  ready();capture.phase=Camera::Phase::Paused;handle({Command::Single,0,plan});assert(capture.phase==Camera::Phase::Paused);
+  ready();assert(pressRemote(Camera::RemoteKey::C1));tick(nullptr);handle({Command::Single,0,plan});assert(!captureOccupied());ack();
+  ready();notify({2,0xd5,0x20});handle({Command::Start,0,plan});assert(!captureOccupied());publish();assert(pressRemote(Camera::RemoteKey::FocusFar));tick(nullptr);assert(remotePress.busy());
+  ready();plan.count=10;capture.start(testMs,plan);notify({2,0xd5,0x20});assert(capture.phase==Camera::Phase::Stopping);tick(nullptr);assert(wire.writes.back().data[1]==8);ack();notify({2,0xd5,0x20});tick(nullptr);assert(wire.writes.back().data[1]==6);ack();assert(!capture.running());
+  ready();live.sim=true;nextGps=0;tokenHold=holdRemote(Camera::RemoteKey::ZoomWide);tick(nullptr);ack();testMs+=200;keepRemoteHeld(tokenHold);tick(nullptr);assert(wire.writes.size()==1);
+  releaseRemote(tokenHold);tick(nullptr);ack();tick(nullptr);assert(op==Op::Location && wire.writes.back().attr==20);
+  // Connection generations protect both queued actions and real status. New
+  // connections start UNKNOWN, and reconnect never replays an old button.
+  ready();assert(requestRecord());assert(pressRemote(Camera::RemoteKey::C1));tokenHold=holdRemote(Camera::RemoteKey::FocusFar);
+  event=ble_gap_event();event.type=BLE_GAP_EVENT_DISCONNECT;event.disconnect.conn.conn_handle=42;gap(&event,context());
+  conn=42;live.session=generation;live.link=Link::Ready;live.remote=true;tick(nullptr);assert(wire.writes.empty() && live.video==Camera::Video::Unknown && !remotePress.busy());
+  ready();tokenHold=holdRemote(Camera::RemoteKey::ZoomWide);tick(nullptr);ack();handle({Command::Disconnect,0,plan});tick(nullptr);assert(wire.terminate==0 && wire.writes.back().data[1]==0x46);ack();tick(nullptr);ack();tick(nullptr);ack();tick(nullptr);assert(wire.terminate==1);
+  std::puts("PASS: actual radio source: mode 1 pairing + movie notifications/ACK distinction/timeout/stale link/state + all remote keys/lease/release/queue/stop/GPS/capture/reconnect");
 }

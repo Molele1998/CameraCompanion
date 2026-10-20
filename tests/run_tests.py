@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 import subprocess
 import sys
+import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
@@ -13,7 +14,7 @@ output = args.output.resolve()
 output.mkdir(parents=True, exist_ok=True)
 includes = ['-I', str(ROOT / 'CameraCompanion'), '-I', str(ROOT / 'tests'),
             '-I', str(ROOT / 'tests/scene_fakes')]
-for name in ['model', 'radio', 'ui', 'scene']:
+for name in ['model', 'radio', 'ui', 'scene', 'motion', 'gpx']:
     executable = output / ('test_' + name + ('.exe' if sys.platform == 'win32' else ''))
     command = [args.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
                '-Wno-misleading-indentation', *includes]
@@ -21,7 +22,11 @@ for name in ['model', 'radio', 'ui', 'scene']:
         command.append('-DCAMERA_FONT_HOST=1')
     subprocess.run([*command, str(ROOT / 'tests' / ('test_' + name + '.cpp')),
                     '-o', str(executable)], check=True)
-    subprocess.run([str(executable), *([str(output)] if name == 'scene' else [])], check=True)
+    gpx_output = output / ('gpx_' + uuid.uuid4().hex)
+    arguments = [str(output)] if name == 'scene' else [str(gpx_output)] if name == 'gpx' else []
+    subprocess.run([str(executable), *arguments], check=True)
+    if name == 'gpx':
+        subprocess.run([sys.executable, str(ROOT / 'tests/verify_gpx.py'), str(gpx_output)], check=True)
 subprocess.run([sys.executable, str(ROOT / 'tools/render_preview.py'),
                 '--input', str(output)], check=True)
-print('PASS: four host suites; synthetic data only, no physical device validation.')
+print('PASS: six host suites; synthetic data only, no physical device validation.')

@@ -28,11 +28,15 @@ void ble_store_config_init(void);
 
 namespace CameraRadio {
 namespace {
-struct Input {Command command;uint8_t value;Camera::Plan plan;uint32_t token=0;};
+struct Input {Command command;uint8_t value;Camera::Plan plan;uint32_t token=0,holdToken=0;};
 struct Saved {uint32_t magic;Peer peer;};
 Snapshot live,published;portMUX_TYPE mux=portMUX_INITIALIZER_UNLOCKED;
 QueueHandle_t commands=nullptr;std::atomic<bool> stopWanted{false};
 Preferences prefs;Saved saved{};Peer target{};Camera::Capture capture;
+Camera::RemotePress remotePress;
+std::atomic<uint32_t> holdWanted{0},holdExpires{0},holdSequence{0};uint32_t activeHold=0;
+bool recordDownIssued=false,recordConfirmed=false;Camera::Video recordBefore=Camera::Video::Unknown;
+uint64_t recordDeadline=0;
 ble_npl_callout timer;uint8_t ownType=0;uint16_t conn=BLE_HS_CONN_HANDLE_NONE;
 bool synced=false,connecting=false,wanted=false,wasReady=false;
 bool watching=false,watchFound=false,disconnectWanted=false;
@@ -42,7 +46,7 @@ uint64_t lastSimSample=UINT64_MAX;
 uint64_t discoverAt=0;uint32_t pairingSequence=0;
 uint8_t retries=0;
 struct Handles {uint16_t rs=0,re=0,ls=0,le=0,control=0,status=0,statusEnd=0,cccd=0,loc=0,flags=0,lock=0,enable=0;} h;
-enum class Op:uint8_t {None,Mtu,Services,RemoteChars,LocationChars,Flags,Lock,Enable,Descriptors,Subscribe,Remote,Location};
+enum class Op:uint8_t {None,Mtu,Services,RemoteChars,LocationChars,Flags,Lock,Enable,Descriptors,Subscribe,Remote,Location,Button};
 Op op=Op::None;uint64_t opDeadline=0;uint8_t setupStep=0;
 Camera::Action action=Camera::Action::None;bool requireTz=true;
 uint64_t nowMs(){return uint64_t(esp_timer_get_time()/1000);}
@@ -53,12 +57,17 @@ void message(const char* s,int error=0){text(live.message,s);live.error=error;
   if(error && (live.lastFailure!=error || live.failureStage!=live.stage)){live.lastFailure=error;live.failureStage=live.stage;trace(Event::Error,error);}}
 void publish(){live.phase=capture.phase;live.triggers=capture.completed;live.skipped=capture.skipped;live.due=capture.due;
   live.activePlan=capture.plan;
+  live.remoteBusy=remotePress.busy();live.remoteKey=remotePress.key;live.remoteHeld=remotePress.held && remotePress.busy();
   portENTER_CRITICAL(&mux);published=live;portEXIT_CRITICAL(&mux);lastPublish=nowMs();}
 void* context(){return reinterpret_cast<void*>(uintptr_t(generation));}
 bool current(uint16_t handle,void* arg){return conn==handle && conn!=BLE_HS_CONN_HANDLE_NONE && uintptr_t(arg)==generation;}
 void clearOp(){op=Op::None;opDeadline=0;}
 void startOp(Op kind){op=kind;opDeadline=nowMs()+4000;}
 void clearPairing(){live.pairingPrompt=PairingPrompt::None;live.pairingCode=live.pairingToken=0;}
+bool captureOccupied(){return capture.phase!=Camera::Phase::Idle && capture.phase!=Camera::Phase::Done && capture.phase!=Camera::Phase::Error;}
+void clearControls(){remotePress.disconnected();holdWanted.store(0);activeHold=0;
+  live.session=0;live.video=Camera::Video::Unknown;live.recordPending=false;live.lastVideoNotify=live.videoSince=0;
+  recordDownIssued=recordConfirmed=false;recordDeadline=0;}
 bool uuid(const ble_uuid_t* u,uint16_t id,uint16_t service) {
   if(u->type==BLE_UUID_TYPE_16)return reinterpret_cast<const ble_uuid16_t*>(u)->value==id;
   if(u->type!=BLE_UUID_TYPE_128)return false;
@@ -69,7 +78,7 @@ bool uuid(const ble_uuid_t* u,uint16_t id,uint16_t service) {
 }
 bool modern(){return live.profile==Profile::Modern || (live.profile==Profile::Auto && live.protocol==0x65);}
 void abortLink(const char* why,int code) {
-  message(why,code);clearOp();clearPairing();wanted=false;watching=watchFound=disconnectWanted=false;ble_gap_disc_cancel();capture.disconnected();
+  message(why,code);clearOp();clearPairing();clearControls();wanted=false;watching=watchFound=disconnectWanted=false;ble_gap_disc_cancel();capture.disconnected();
   if(conn!=BLE_HS_CONN_HANDLE_NONE){live.link=Link::Disconnecting;ble_gap_terminate(conn,BLE_ERR_REM_USER_CONN_TERM);}
   else if(connecting){live.link=Link::Disconnecting;ble_gap_conn_cancel();}
   else live.link=Link::Failed;
@@ -90,7 +99,7 @@ void savePeer() {
 int gap(ble_gap_event* event,void* arg);
 void connectPeer(const Peer& peer) {
   if(conn!=BLE_HS_CONN_HANDLE_NONE || connecting){message("Disconnect current camera first",-2);return;}
-  ble_gap_disc_cancel();target=peer;h=Handles();clearOp();clearPairing();discoverAt=0;++generation;
+  ble_gap_disc_cancel();target=peer;h=Handles();clearOp();clearPairing();clearControls();discoverAt=0;++generation;
   watching=watchFound=false;disconnectWanted=false;
   live.encrypted=live.bonded=live.authenticated=live.remote=live.location=live.notifications=false;
   live.focusKnown=live.shutterKnown=false;live.smpReason=-1;live.protocol=peer.protocol;text(live.name,peer.name);
@@ -172,6 +181,15 @@ int wrote(uint16_t handle,const ble_gatt_error* err,ble_gatt_attr*,void* arg) {
       else{message("RC rejected: check Bluetooth Rmt Ctrl",err->status);
         if(action==Camera::Action::FullUp || action==Camera::Action::HalfUp)abortLink("Release failed: check camera",err->status);}
       break;
+    case Op::Button:{
+      const auto key=remotePress.key;const auto step=remotePress.pending;
+      remotePress.ack(step,ok,nowMs());
+      if(ok){++live.rcWrites;if(key!=Camera::RemoteKey::Record)message("Remote button write acknowledged");}
+      else {message("Remote button rejected; checking release",err->status);
+        if(key==Camera::RemoteKey::Record){live.video=Camera::Video::Unknown;live.recordPending=false;}
+        if(step==Camera::KeyStep::Up)abortLink("Button release failed: check camera",err->status);}
+      if(!remotePress.busy())activeHold=0;
+      break;}
     case Op::Location:
       if(ok){++live.gpsWrites;live.lastGps=nowMs();message("SIM GPS write acknowledged");}
       else message("GPS write rejected; check camera menu",err->status);
@@ -208,7 +226,7 @@ void setup() {
     case 8:
       live.remote=h.control!=0;
       if(!live.remote && !live.location){abortLink("No supported RC/GPS endpoints",-13);break;}
-      live.link=Link::Ready;live.stage=Stage::Ready;trace(Event::Ready);wasReady=true;retries=0;nextGps=nowMs();savePeer();
+      live.link=Link::Ready;live.stage=Stage::Ready;live.session=generation;trace(Event::Ready);wasReady=true;retries=0;nextGps=nowMs();savePeer();
       if(!live.error)message("Ready: test with camera in Still/Single");break;
   }
   if(rc){clearOp();abortLink("GATT setup could not start",rc);}
@@ -283,7 +301,7 @@ int gap(ble_gap_event* e,void* arg) {
       if(live.stage==Stage::Security && live.error==BLE_HS_ENOTCONN && e->disconnect.reason)
         message("Link dropped during pairing; see HCI reason",e->disconnect.reason);
       else if(wanted && !wasReady && !live.error)message("Camera disconnected before setup completed",e->disconnect.reason?e->disconnect.reason:-18);
-      conn=BLE_HS_CONN_HANDLE_NONE;++generation;connecting=false;disconnectWanted=false;clearOp();clearPairing();capture.disconnected();
+      conn=BLE_HS_CONN_HANDLE_NONE;++generation;connecting=false;disconnectWanted=false;clearOp();clearPairing();clearControls();capture.disconnected();
       live.encrypted=live.bonded=live.authenticated=live.remote=live.location=live.notifications=false;
       live.focusKnown=live.shutterKnown=false;live.link=live.error?Link::Failed:Link::Idle;
       if(wanted && wasReady){retryAt=nowMs()+100;reconnectSince=nowMs();slowWatch=false;message("Link lost; plan stopped, reconnecting");}
@@ -292,9 +310,17 @@ int gap(ble_gap_event* e,void* arg) {
     case BLE_GAP_EVENT_NOTIFY_RX:
       if(e->notify_rx.conn_handle!=conn || e->notify_rx.attr_handle!=h.status)break;
       {uint8_t b[3]{};if(OS_MBUF_PKTLEN(e->notify_rx.om)!=3 || os_mbuf_copydata(e->notify_rx.om,0,3,b)!=0)break;
-      live.lastNotify=nowMs();if(b[0]==2 && b[1]==0x3f){live.focusKnown=true;live.focused=b[2]==0x20;}
-      if(b[0]==2 && b[1]==0xa0){live.shutterKnown=true;live.shutterBusy=b[2]==0x20;}
-      if(b[0]==2 && b[1]==0xc3 && b[2]==0){live.remote=false;message("Enable Bluetooth Rmt Ctrl, reconnect",-14);}}
+      live.lastNotify=nowMs();if(b[0]==2 && b[1]==0x3f && (b[2]==0 || b[2]==0x20)){live.focusKnown=true;live.focused=b[2]==0x20;}
+      if(b[0]==2 && b[1]==0xa0 && (b[2]==0 || b[2]==0x20)){live.shutterKnown=true;live.shutterBusy=b[2]==0x20;}
+      const auto video=Camera::videoNotification(b,sizeof b);
+      if(video!=Camera::Video::Unknown){
+        if(video==Camera::Video::Recording && live.video!=video)live.videoSince=nowMs();
+        if(video==Camera::Video::Stopped)live.videoSince=0;
+        live.video=video;live.lastVideoNotify=nowMs();
+        if(live.recordPending && recordDownIssued && (recordBefore==Camera::Video::Unknown || recordBefore!=video))recordConfirmed=true;
+        if(video==Camera::Video::Recording && captureOccupied() && capture.phase!=Camera::Phase::Stopping){capture.stop();message("Movie started on camera; stopping photo plan");}
+      }
+      if(b[0]==2 && b[1]==0xc3 && b[2]==0){live.remote=false;remotePress.release();holdWanted.store(0);message("Enable Bluetooth Rmt Ctrl, reconnect",-14);}}
       break;
     case BLE_GAP_EVENT_REPEAT_PAIRING:abortLink("Old bond: forget this camera on both sides",-15);return BLE_GAP_REPEAT_PAIRING_IGNORE;
     case BLE_GAP_EVENT_PASSKEY_ACTION:
@@ -330,6 +356,7 @@ void handle(const Input& in) {
     case Command::Saved:if(live.saved){retries=0;connectPeer(saved.peer);}else message("No saved camera",-4);break;
     case Command::Disconnect:
       clearPairing();wanted=false;watching=watchFound=false;retryAt=0;ble_gap_disc_cancel();message("Disconnecting");
+      holdWanted.store(0);remotePress.release();
       if(conn!=BLE_HS_CONN_HANDLE_NONE && live.link==Link::Ready && live.remote){capture.stop();disconnectWanted=true;disconnectDeadline=nowMs()+3000;}
       else if(conn!=BLE_HS_CONN_HANDLE_NONE){clearOp();live.link=Link::Disconnecting;ble_gap_terminate(conn,BLE_ERR_REM_USER_CONN_TERM);}
       else if(connecting){live.link=Link::Disconnecting;ble_gap_conn_cancel();}
@@ -343,19 +370,36 @@ void handle(const Input& in) {
       message("Saved peer removed; remove it on camera");break;
     case Command::Single:case Command::Focus:case Command::Start:
       if(live.link!=Link::Ready || !live.remote){message("Camera RC not ready",-20);break;}
+      if(captureOccupied() || remotePress.busy() || live.recordPending || live.video==Camera::Video::Recording){message("Finish current operation before capture",-60);break;}
       {Camera::Plan p=in.plan;if(in.command!=Command::Start){p=Camera::Plan();p.count=1;p.focusOnly=in.command==Command::Focus;}
       if(!capture.start(nowMs(),p))message("Stop current plan before starting",-21);
       else {live.captureKind=in.command==Command::Start?CaptureKind::Interval:p.focusOnly?CaptureKind::Focus:CaptureKind::Single;
         message(p.focusOnly?"Focusing":"Capture plan started");}}break;
     case Command::Pause:capture.pause();message("Pause: releasing shutter");break;
     case Command::Resume:
-      if(live.link!=Link::Ready || !live.remote || !capture.resume(nowMs()))message("No paused plan ready",-22);
+      if(live.link!=Link::Ready || !live.remote || remotePress.busy() || live.recordPending || live.video==Camera::Video::Recording || !capture.resume(nowMs()))message("No paused plan ready",-22);
       else message("Capture resumed from now");break;
     case Command::SetSim:live.sim=in.value!=0;message(live.sim?"SIM GPS enabled: synthetic coordinates":"GPS sending disabled");break;
     case Command::SetFix:live.simFix=in.value!=0;message(live.simFix?"SIM fix restored":"SIM signal loss: no new location writes");break;
     case Command::SetProfile:
       if(conn!=BLE_HS_CONN_HANDLE_NONE || connecting || in.value>2){message("Disconnect to change profile",-2);break;}
       live.profile=Profile(in.value);prefs.putUChar("profile",in.value);message("Profile set; reconnect camera");break;
+    case Command::Record:case Command::RemotePulse:case Command::RemoteHold:{
+      // New controls are scoped to the link seen by the UI, never replayed on
+      // a later camera connection. A released queued hold must not start.
+      const bool hold=in.command==Command::RemoteHold;
+      if(!in.token || in.token!=live.session || live.link!=Link::Ready || !live.remote || disconnectWanted){message("Remote request belongs to an inactive link",-20);break;}
+      if(hold && (!in.holdToken || holdWanted.load()!=in.holdToken || int32_t(holdExpires.load()-uint32_t(nowMs()))<=0))break;
+      if(remotePress.busy() || captureOccupied() || live.recordPending){message("Stop current operation before remote control",-60);break;}
+      const bool record=in.command==Command::Record;
+      const auto key=record?Camera::RemoteKey::Record:Camera::RemoteKey(in.value);
+      if(!Camera::validKey(key) || (!record && key==Camera::RemoteKey::Record))break;
+      if(record && in.value!=uint8_t(live.video)){message("Recording state changed; check screen",-62);break;}
+      if(!remotePress.start(key,hold,nowMs()))break;
+      activeHold=hold?in.holdToken:0;
+      if(record){live.recordPending=true;recordBefore=live.video;recordDownIssued=recordConfirmed=false;recordDeadline=0;message("Movie button queued; waiting for camera status");}
+      else message(hold?"Remote button held; release to stop":"Remote button queued");
+      break;}
     case Command::PairingReply:
       // A delayed tap/queued reply from an earlier link must never authorize a
       // new pairing. The request token changes with each on-screen challenge.
@@ -370,6 +414,7 @@ void tick(ble_npl_event*) {
   const auto now=nowMs();
   if(stopWanted.exchange(false)){
     xQueueReset(commands);
+    holdWanted.store(0);remotePress.release();
     if(live.link==Link::Ready && live.remote){capture.stop();message("Stop requested: releasing shutter");}
     else if(live.link==Link::Ready){capture.disconnected();message("Capture stopped; GPS link remains");}
     else {wanted=false;watching=watchFound=false;retryAt=0;ble_gap_disc_cancel();
@@ -378,6 +423,7 @@ void tick(ble_npl_event*) {
   }
   Input in{};for(uint8_t n=0;n<4 && xQueueReceive(commands,&in,0)==pdTRUE;++n){
     if(disconnectWanted && in.command!=Command::Disconnect){message("Disconnect in progress",-23);continue;}handle(in);}
+  if(activeHold && (holdWanted.load()!=activeHold || int32_t(holdExpires.load()-uint32_t(now))<=0))remotePress.release();
   if(live.simFix && now/1000!=lastSimSample){lastSimSample=now/1000;live.fix=Camera::simulate(lastSimSample*1000);}
   live.fix.valid=live.simFix;
   if(op!=Op::None && now>=opDeadline){clearOp();abortLink("GATT timeout: plan stopped",-30);}
@@ -387,17 +433,29 @@ void tick(ble_npl_event*) {
     live.link=Link::Discovering;live.stage=Stage::Discovery;trace(Event::DiscoveryStart);message("Discovering encrypted camera services");}
   if(conn!=BLE_HS_CONN_HANDLE_NONE && live.link==Link::Discovering && op==Op::None)setup();
   if(live.link==Link::Ready && op==Op::None){
-    const auto a=capture.next(now,live.remote,live.shutterKnown && live.shutterBusy,live.focusKnown,live.focused);
-    if(a!=Camera::Action::None){action=a;if(a==Camera::Action::HalfDown){live.focusKnown=false;live.focused=false;}
+    // GPS/another ATT write can delay DOWN after the input was handled. Check
+    // the state once more at the last point where the toggle can be cancelled.
+    if(remotePress.key==Camera::RemoteKey::Record && !remotePress.downIssued && live.video!=recordBefore){remotePress.release();message("Movie state changed before send; button cancelled",-62);}
+    const bool hadButton=remotePress.busy();const auto key=remotePress.key;const auto step=remotePress.next(now);
+    const auto a=hadButton?Camera::Action::None:capture.next(now,live.remote,live.shutterKnown && live.shutterBusy,live.focusKnown,live.focused);
+    if(step!=Camera::KeyStep::None){uint8_t bytes[3]{};const size_t n=Camera::remotePayload(key,step==Camera::KeyStep::Down,bytes);
+      if(key==Camera::RemoteKey::Record && step==Camera::KeyStep::Down){recordDownIssued=true;recordDeadline=now+6000;}
+      write(h.control,bytes,n,Op::Button);}
+    else if(a!=Camera::Action::None){action=a;if(a==Camera::Action::HalfDown){live.focusKnown=false;live.focused=false;}
       const uint8_t bytes[]={1,Camera::commandByte(a)};write(h.control,bytes,2,Op::Remote);}
-    else if(live.sim && live.simFix && live.location && now>=nextGps && !capture.full && !capture.half &&
+    else if(!hadButton && live.sim && live.simFix && live.location && now>=nextGps && !capture.full && !capture.half &&
             (!capture.running() || (capture.phase==Camera::Phase::Wait && capture.due>now+1000))){
       constexpr int16_t timezoneMinutes=480;
       uint8_t data[95]{};const size_t n=Camera::locationPayload(live.fix,requireTz || timezoneMinutes!=0,timezoneMinutes,0,data);
       if(n)write(h.loc,data,n,Op::Location);
     }
   }
-  if(disconnectWanted && ((op==Op::None && !capture.running()) || now>=disconnectDeadline)){
+  if(live.recordPending && !remotePress.busy()){
+    if(!recordDownIssued){live.recordPending=false;if(live.error!=-62)message("Movie button cancelled before sending");}
+    else if(recordConfirmed){live.recordPending=false;message("Movie state confirmed by camera");}
+    else if(now>=recordDeadline){live.recordPending=false;live.video=Camera::Video::Unknown;live.videoSince=0;message("No movie confirmation; check camera; no retry sent",-61);}
+  }
+  if(disconnectWanted && ((op==Op::None && !capture.running() && !remotePress.busy()) || now>=disconnectDeadline)){
     disconnectWanted=false;live.link=Link::Disconnecting;ble_gap_terminate(conn,BLE_ERR_REM_USER_CONN_TERM);
   }
   if(capture.phase==Camera::Phase::Error && live.link==Link::Ready && capture.error[0])message(capture.error,-24);
@@ -419,7 +477,7 @@ void tick(ble_npl_event*) {
 }
 void sync(){if(ble_hs_util_ensure_addr(0)!=0 || ble_hs_id_infer_auto(0,&ownType)!=0){message("BLE address unavailable",-40);publish();return;}
   synced=true;live.link=Link::Idle;message("Ready to scan for Sony camera");publish();ble_npl_callout_reset(&timer,ble_npl_time_ms_to_ticks32(20));}
-void reset(int reason){live.link=Link::Failed;message("BLE host reset; reconnect manually",reason);clearPairing();capture.disconnected();wanted=false;conn=BLE_HS_CONN_HANDLE_NONE;++generation;clearOp();connecting=watching=watchFound=false;publish();}
+void reset(int reason){live.link=Link::Failed;message("BLE host reset; reconnect manually",reason);clearPairing();clearControls();capture.disconnected();wanted=false;conn=BLE_HS_CONN_HANDLE_NONE;++generation;clearOp();connecting=watching=watchFound=false;publish();}
 void host(void*){nimble_port_run();nimble_port_freertos_deinit();}
 } // namespace
 bool begin() {
@@ -446,6 +504,18 @@ bool begin() {
 }
 bool request(Command command,uint8_t value,const Camera::Plan& plan){if(!commands)return false;const Input in{command,value,plan};return xQueueSend(commands,&in,0)==pdTRUE;}
 bool confirmPairing(bool accept,uint32_t token){if(!commands || !token)return false;const Input in{Command::PairingReply,uint8_t(accept),Camera::Plan(),token};return xQueueSend(commands,&in,0)==pdTRUE;}
+bool requestRecord(){const auto s=snapshot();if(!commands || s.link!=Link::Ready || !s.remote || !s.session)return false;
+  const Input in{Command::Record,uint8_t(s.video),Camera::Plan(),s.session};return xQueueSend(commands,&in,0)==pdTRUE;}
+bool pressRemote(Camera::RemoteKey key){const auto s=snapshot();if(!commands || s.link!=Link::Ready || !s.remote || !s.session || !Camera::validKey(key) || key==Camera::RemoteKey::Record)return false;
+  const Input in{Command::RemotePulse,uint8_t(key),Camera::Plan(),s.session};return xQueueSend(commands,&in,0)==pdTRUE;}
+uint32_t holdRemote(Camera::RemoteKey key){const auto s=snapshot();if(!commands || s.link!=Link::Ready || !s.remote || !s.session || !Camera::validKey(key) || key==Camera::RemoteKey::Record)return 0;
+  uint32_t token=holdSequence.fetch_add(1)+1;if(!token)token=holdSequence.fetch_add(1)+1;
+  holdExpires.store(uint32_t(nowMs())+400);holdWanted.store(token);
+  const Input in{Command::RemoteHold,uint8_t(key),Camera::Plan(),s.session,token};
+  if(xQueueSend(commands,&in,0)==pdTRUE)return token;
+  uint32_t expected=token;holdWanted.compare_exchange_strong(expected,0);return 0;}
+void keepRemoteHeld(uint32_t token){if(token && holdWanted.load()==token)holdExpires.store(uint32_t(nowMs())+400);}
+void releaseRemote(uint32_t token){uint32_t expected=token;if(token)holdWanted.compare_exchange_strong(expected,0);}
 void stop(){stopWanted.store(true);}
 Snapshot snapshot(){portENTER_CRITICAL(&mux);const auto result=published;portEXIT_CRITICAL(&mux);return result;}
 const char* linkName(Link s){static const char* names[]={"STARTING","IDLE","SCANNING","CONNECTING","PAIRING","DISCOVERING","READY","DISCONNECT","FAILED","RECONNECT"};return names[uint8_t(s)];}

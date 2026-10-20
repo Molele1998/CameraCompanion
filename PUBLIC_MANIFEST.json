@@ -1,6 +1,6 @@
 {
   "format": "camera-companion-public-source-manifest",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "note": "Covers every source release file except this manifest itself",
   "files": {
     ".gitignore": {
@@ -44,12 +44,16 @@
       "sha256": "c0a67b611ef13969b4bc509a90b0c319021abefea5267a45eaaf63a4f603d7e0"
     },
     "CameraCompanion/BufferedDisplay.cpp": {
-      "bytes": 2368,
-      "sha256": "367e5fc1eecdfb1d85356da86cbfa4694130b422107669054ab7abcab1814b92"
+      "bytes": 3571,
+      "sha256": "ca04fd6f9ce6cf78886088ff7e415b797e96fc24868e19cbb9c60e939acf4788"
     },
     "CameraCompanion/BufferedDisplay.h": {
-      "bytes": 1283,
-      "sha256": "5cb54f65b80627715872e8301335c8eed2c4ba75b161ea6419cbd9a11f7ffb7f"
+      "bytes": 1473,
+      "sha256": "1730ae9d513c0f52519dbee7db8e340f43be4b68ea6c2a4a8a2bbcb13c4def2a"
+    },
+    "CameraCompanion/CameraAnimation.h": {
+      "bytes": 1760,
+      "sha256": "99bd8dd7993a00712ed0a60809d71ac770888e4960e871c04bed8dd91cb598e1"
     },
     "CameraCompanion/CameraCompanion.ino": {
       "bytes": 296,
@@ -60,72 +64,112 @@
       "sha256": "a680133729fb9eb1aa746ac0031edb63ff3b8ccaa0a755b4613a0e887b54be25"
     },
     "CameraCompanion/CameraRadio.cpp": {
-      "bytes": 32328,
-      "sha256": "d904c3e17888e8985e93d9ce1abd524944fe4eeeb814e1d1228a1bb2f2b415fc"
+      "bytes": 39098,
+      "sha256": "bcdd41cd10ab8344195784b2418b5267e278e58696a9c182c950965936a0bca9"
     },
     "CameraCompanion/CameraRadio.h": {
-      "bytes": 2404,
-      "sha256": "66e1dfa4a1406594fca86b8be5325cc45ca72ce0eb481510d2c2e86951caa770"
+      "bytes": 3028,
+      "sha256": "e544332636badf8f20294cb5f5aecff579ab03287be46c991742660f1acf5a5a"
     },
     "CameraCompanion/CameraScene.h": {
-      "bytes": 17228,
-      "sha256": "940a88545ae03c71b80e09e9887e9a1eee0559a6faa29f6230f41885f6fcd0d3"
+      "bytes": 22066,
+      "sha256": "2944398cfd4b22e9677c5fa3fe4d9c294fd831731c52dc90e580ccb87b94b425"
     },
     "CameraCompanion/CameraUi.cpp": {
-      "bytes": 14643,
-      "sha256": "61e542c9555a05d5d86b4d3a4bd73bccb1570d1e230a590424a57d7a78e96e48"
+      "bytes": 20892,
+      "sha256": "e285afd9cae2b3f3c1e2e2eda2d099a2d1a1f891893d25a47839cc4fa5bf4b62"
     },
     "CameraCompanion/CameraUi.h": {
       "bytes": 60,
       "sha256": "d6e79265932762fda75ff6b4f18fa95026e4bab5030efb609299db7a03c30fc4"
     },
     "CameraCompanion/CameraUiLogic.h": {
-      "bytes": 14035,
-      "sha256": "a02d0c0a717cf6d8d3e7a992737b5f3235dc41079830d06083ed2b249d8d0462"
+      "bytes": 16909,
+      "sha256": "7c0323236b7b9a147aedf8fd3e9ab711210715580739c4a7ad57b65c939dfd66"
     },
     "CameraCompanion/ChineseFont.h": {
-      "bytes": 1446609,
-      "sha256": "b2c517dc9dbbfa27a31226d33671b848ebe64a8334c6f9a5d2db25a2cb266c5e"
+      "bytes": 1616587,
+      "sha256": "6b331dc5b9f91f0027fbb152fb1c905681696f1aa3082258657bd9a7f68b4b72"
+    },
+    "CameraCompanion/GpxLogger.cpp": {
+      "bytes": 4353,
+      "sha256": "49833282fb75dfa5b2ebbf9f7dd94949bc2480cc74752f14d6e4517685100140"
+    },
+    "CameraCompanion/GpxLogger.h": {
+      "bytes": 489,
+      "sha256": "eb3fc1cb87a1733d4c30345b428e8494763f48295d48c288dd992db2e785a960"
+    },
+    "CameraCompanion/GpxWriter.h": {
+      "bytes": 3068,
+      "sha256": "02e2571ac3787ba13858231be3fe32b8ceeed9652716987f3a90adabebd27dd4"
     },
     "CameraCompanion/licenses/NotoSansSC-OFL.txt": {
       "bytes": 4388,
       "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
     },
+    "CameraCompanion/SonyRemote.h": {
+      "bytes": 2602,
+      "sha256": "2b5821527e1837de088e8d21bef79c81664051fc186c9e2cb76fa73cee3647aa"
+    },
     "CameraCompanion/StatusIcons.h": {
       "bytes": 1551,
       "sha256": "c198ee51f5086d114059cf223f9105e32e9b3fb1ab80b6e2a9b7f6a4ea46569d"
+    },
+    "CHANGELOG.md": {
+      "bytes": 1200,
+      "sha256": "fe45f936395c83184ad11193b59887d3569f74bd803f9178adc26fc6c545235a"
     },
     "docs/FONT.md": {
       "bytes": 1376,
       "sha256": "ef727ed6c72927a25ecc4ef28316d33b7d7f41eb6703590a5a0176b7fba714db"
     },
+    "docs/gpx-backup.png": {
+      "bytes": 46469,
+      "sha256": "f8062bedfb30ef748c3d03ea3cbd38825bbcbb8e77b79f0b13554191c2866a3c"
+    },
+    "docs/GPX.md": {
+      "bytes": 3657,
+      "sha256": "7779d5c655d39dc32a6f3a7efd963c0e1b0665c6b392a6c356d63fe8d5eda067"
+    },
     "docs/HARDWARE.md": {
-      "bytes": 1242,
-      "sha256": "6a1c3fe759bee647b976999a3a8a931cae24978cd1671b78e1e08f382dcad8cc"
+      "bytes": 1819,
+      "sha256": "2b1f6c85af618c3dcb0f01c4e0ad4e0849d29177bf5fa4d322d4de26549b7e1d"
+    },
+    "docs/HARDWARE_TESTS.md": {
+      "bytes": 7871,
+      "sha256": "3dfb748bff70597b5d3dad5bbcac924744ca8457d6374433512aed2fa9e644f0"
     },
     "docs/pairing-preview.png": {
-      "bytes": 11956,
-      "sha256": "3f4a9c09bf9b793b294d18f746288793f61b5d983f470c6e7bbba33db622ac83"
+      "bytes": 27763,
+      "sha256": "b024be0551a42f63f83d3112094c5d3311f5f135cb90d110ea0d4c2de220a44e"
     },
     "docs/PRIVACY.md": {
       "bytes": 1529,
       "sha256": "f2777bb32fbbddc697c9c4c7f7350f8fe9d09e621eccd192a4f9b9596a293f45"
     },
     "docs/PROTOCOL.md": {
-      "bytes": 2593,
-      "sha256": "cee4024f46307f4ba5baaa553bb371cf76e53a0daa2fd338cce87d7ea36faf08"
+      "bytes": 3475,
+      "sha256": "4a7b0bd71bd5562340ee54876d8a695c8565254cf2307ef7848896569f825d7f"
+    },
+    "docs/remote-controls.png": {
+      "bytes": 105110,
+      "sha256": "4cd3c4f1ae406cf8abd762285e531d557b36606b3c78cd502f247dbb05f363a8"
+    },
+    "docs/REMOTE_CONTROLS.md": {
+      "bytes": 5891,
+      "sha256": "9eec387cfa0a400199b2292dc2119c17a9fdf90851fc55b5db1e0c8ec9c79024"
     },
     "docs/status-bar.png": {
       "bytes": 6059,
       "sha256": "1c53828d15cb9466b828559213413b1352d3b3f7dded369f45701cfbe8c6ce5b"
     },
     "docs/ui-preview.png": {
-      "bytes": 138271,
-      "sha256": "274656307c160acce303d251ef2aa092ce154885ebde0fe2387d8d0d1f16b4c4"
+      "bytes": 126347,
+      "sha256": "2bd047d429d951091af82ed64f6fcfdc80e33545f966f884f3e97be5d7dee9ac"
     },
     "docs/verification.json": {
-      "bytes": 4260,
-      "sha256": "c1da0ca9120f096d7894081ff24bfb1a0fde1ccf88797391a9f7b4ca79ac70df"
+      "bytes": 5569,
+      "sha256": "5217977c774d734c3dd49f82d0b1c39f4505d6859275b3ece5628506eb770601"
     },
     "LICENSE": {
       "bytes": 1086,
@@ -152,56 +196,72 @@
       "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
     },
     "README.md": {
-      "bytes": 6547,
-      "sha256": "b1fcc7bc6c0943e84568633d5ea9e3f778f032a766446c0d51bf8202045eeac3"
+      "bytes": 9800,
+      "sha256": "a983a47c61e214da6f75a90f95059d4e17b00d83e8d51c0a61a19efe149092ca"
     },
     "requirements.txt": {
       "bytes": 15,
       "sha256": "afef94cb54188a888fb6b5b25f2997dc269414d0f5523f00b734ed9b0e3020ad"
+    },
+    "tests/GpxHost.h": {
+      "bytes": 1684,
+      "sha256": "dd245344d67b5451a02ee1845a0c3444a3c3743925b33cfe2080e364f634e7fc"
     },
     "tests/RadioHost.h": {
       "bytes": 8793,
       "sha256": "a75f502d238f41a14db9f36b07ca04a27924f5fd97652021ec8ea56b41ff230c"
     },
     "tests/README.md": {
-      "bytes": 1208,
-      "sha256": "3a05f9c7bfca4c8452cb3d4de6f4cd8b75ce6a69a25a70c50802b020b1f58d31"
+      "bytes": 1962,
+      "sha256": "c72bcaf8a5ab3a3162ca3d6edf264e8b9dbee6ef1f8329d31e6a650386deb4c4"
     },
     "tests/run_tests.py": {
-      "bytes": 1375,
-      "sha256": "8d0dd64ec02ffcf2479e98b7f384cde966aca19d9888054e1c83d42d8083764e"
+      "bytes": 1648,
+      "sha256": "f71930f82d69da8588dbf3d8ed754b0e4166761cd324ecee11634aec9f5d84b8"
     },
     "tests/scene_fakes/Arduino_GFX_Library.h": {
-      "bytes": 3279,
-      "sha256": "7b4c4dcbfba5b8a0cc65162391c7f0c507460740b9aa828806e5837bc44d42af"
+      "bytes": 4327,
+      "sha256": "b79e6f37107c1e147feb8280133dd9b593cc6ed94753949b980a5d57689369fc"
+    },
+    "tests/test_gpx.cpp": {
+      "bytes": 3437,
+      "sha256": "fa8a5a4a597c69c7c21be7a21397383ab4854fd3c17b190e738d0f0e2186d21d"
     },
     "tests/test_model.cpp": {
-      "bytes": 2870,
-      "sha256": "8bcba464a653ae8e470a810077bbe951e0a82f207d177ce482dfb537db8e8e51"
+      "bytes": 5109,
+      "sha256": "90e7ba60509578829c33dd514c5aea0eec6a0f30791a44a7e416baa092c28366"
+    },
+    "tests/test_motion.cpp": {
+      "bytes": 3193,
+      "sha256": "6d8e3793ee9fab3ecbe04500e18264dc2ebbb3dbd06b7e194b6ad58b20482a1d"
     },
     "tests/test_radio.cpp": {
-      "bytes": 13793,
-      "sha256": "944da2e7b2d0a223d360199ac974a84fb9af207e42994c46e154c333313412c8"
+      "bytes": 21290,
+      "sha256": "113bb45cccae03cc4995c03c5a91c80175f6e06e006ef325f8ed5133186e180c"
     },
     "tests/test_scene.cpp": {
-      "bytes": 6833,
-      "sha256": "b25803431fc29a7adfee13936c85c723412bb4209d14b26a955d3b02e4e922c5"
+      "bytes": 11393,
+      "sha256": "03d1d85186e1e770dd75d2693cde711a895b6687f7ab01b6de6d7bb5a3d729a2"
     },
     "tests/test_ui.cpp": {
-      "bytes": 7894,
-      "sha256": "ef9457f9c2b46894f8d840831de98af34ac51776b611ca8959f993c0a93e337b"
+      "bytes": 15386,
+      "sha256": "63a1a103ed1cc25fca3426a5ab33f741e30771ec460f8d65599a812d0898aa84"
     },
     "tests/UiHost.h": {
-      "bytes": 2245,
-      "sha256": "ecc0d5761eec3758fb3d41222ae4262da3a8ec36163dd41f7fdf447eecac7a2d"
+      "bytes": 3289,
+      "sha256": "65f1363a8aec0ec7b36f10435e1c605caa0a5a7271951f608810413b4023e458"
+    },
+    "tests/verify_gpx.py": {
+      "bytes": 953,
+      "sha256": "ea230e1c102d99697ea57c05389f9f72aa80e55f386aa80e080050a15f1af386"
     },
     "THIRD_PARTY_NOTICES.md": {
-      "bytes": 2311,
-      "sha256": "e36d102c73161078b2276fa0dff1ce09196776e24fcd71fcdc6257a483807d39"
+      "bytes": 2407,
+      "sha256": "de2635db0a3c31df47affedf811d70c802fc6cd0ce130252b1acbe511749dd0a"
     },
     "tools/generate_font.py": {
-      "bytes": 5740,
-      "sha256": "7cb482eec0249d9c982045021a40a7ede35be0b033354539dae482fc08110892"
+      "bytes": 5873,
+      "sha256": "b7602cd137a7f8dc07249948fa1a575f4a64c796d4c3e506006f97dcff000fc7"
     },
     "tools/generate_icons.py": {
       "bytes": 5520,
@@ -212,8 +272,8 @@
       "sha256": "c1745d89c67a80c74ee45816ef1eaf5f9c9591e7efd4002663b2940da67e7c6f"
     },
     "tools/render_preview.py": {
-      "bytes": 1823,
-      "sha256": "90f7173ac555059611be50c58b93e0da8c2f5a8295d4734f8427180a0f2d2aeb"
+      "bytes": 3912,
+      "sha256": "5e5f0c950978e48485b595e6de505be484f7d21e3a8ed5107c927508ddb4079f"
     }
   }
 }

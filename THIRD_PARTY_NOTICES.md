@@ -7,7 +7,7 @@
 | [gkoh/furble](https://github.com/gkoh/furble/tree/0cac22aacc3d9ef250be40849118af78a5f39f27) | Sony 遥控/状态通知及安全能力参考；按键调度和板上界面独立组织 | [MIT](licenses/furble-MIT.txt) |
 | [finfinack/alphaloc](https://github.com/finfinack/alphaloc/tree/db75493c3ee1750a8d05457c9fda024199458862) | 原生 NimBLE 客户端、Sony GPS 编码与能力标志参考/改写；对应 CameraRadio.cpp、CameraModel.h 中相关部分 | [Apache-2.0](licenses/alphaloc-Apache-2.0.txt) |
 | [dzwiedziu-nkg/esp32-a7iv-rc](https://github.com/dzwiedziu-nkg/esp32-a7iv-rc/tree/f79f8601d9eb8111008cdc413ac62a415a985724) | A7 IV 配对和遥控字节参考；未搬用其 Bluedroid 后端 | [MIT](licenses/esp32-a7iv-rc-MIT.txt) |
-| [ekutner/camera-gps-link](https://github.com/ekutner/camera-gps-link/tree/3d4aaf551385e94b235e99f80edf13a0106dfd6d) | Android 模式1时序、Sony广播/GPS初始化及重连思路参考；本工程改写为 ESP32 host 任务和单相机状态机 | [MIT](licenses/camera-gps-link-MIT.txt) |
+| [ekutner/camera-gps-link](https://github.com/ekutner/camera-gps-link/tree/3d4aaf551385e94b235e99f80edf13a0106dfd6d) | Android 模式1时序、Sony广播/GPS初始化及重连思路参考；Consttants.kt / RemoteControlDialog.kt中的REC、AF-ON/C1、调焦/变焦字节与按键语义；本工程改写为ESP32 host任务和单相机状态机 | [MIT](licenses/camera-gps-link-MIT.txt) |
 | [Google Fonts: Noto Sans SC](https://github.com/google/fonts/tree/main/ofl/notosanssc) | 修改格式的 4-bit alpha 字形子集，来自 OFL 字体，非 Windows 系统字体 | [SIL OFL 1.1](licenses/NotoSansSC-OFL.txt) |
 
 alphaloc 的发布提交没有独立 NOTICE 文件；保留其完整 Apache-2.0 许可证、项目链接、提交及相关改写范围。本项目新增 Arduino 启动/板层、串行事务、触摸确认、停止/防重复和间隔计划组织，并非原版项目。

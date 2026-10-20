@@ -1,6 +1,8 @@
 #pragma once
 #include "CameraModel.h"
+#include "SonyRemote.h"
 namespace CameraRadio {
+constexpr const char* kVersion="0.3.0";
 constexpr uint8_t kMaxCameras=6;
 enum class Link:uint8_t { Starting,Idle,Scanning,Connecting,Pairing,Discovering,Ready,Disconnecting,Failed,Reconnecting };
 enum class Profile:uint8_t { Auto,Legacy,Modern };
@@ -15,6 +17,9 @@ struct Snapshot {
   Peer peers[kMaxCameras]{};uint8_t count=0;char name[32]{};char savedName[32]{};
   bool saved=false,encrypted=false,bonded=false,authenticated=false,remote=false,location=false,notifications=false;
   bool sim=false,simFix=true,focusKnown=false,focused=false,shutterKnown=false,shutterBusy=false;
+  Camera::Video video=Camera::Video::Unknown;bool recordPending=false,remoteBusy=false,remoteHeld=false;
+  Camera::RemoteKey remoteKey=Camera::RemoteKey::None;
+  uint32_t session=0;uint64_t lastVideoNotify=0,videoSince=0;
   uint8_t protocol=0;uint16_t mtu=23;int error=0;char message[80]="Starting BLE";
   Stage stage=Stage::Idle,failureStage=Stage::Idle;int lastFailure=0,disconnectReason=0,securityCode=0,smpReason=-1;
   uint32_t attempts=0;TraceEntry trace[12]{};uint8_t traceCount=0;
@@ -23,10 +28,15 @@ struct Snapshot {
   CaptureKind captureKind=CaptureKind::Single;Camera::Plan activePlan{};
   uint64_t due=0,lastNotify=0,lastGps=0;Camera::Fix fix{};
 };
-enum class Command:uint8_t { Scan,Connect,Saved,Disconnect,Forget,Single,Focus,Start,Pause,Resume,SetSim,SetFix,SetProfile,PairingReply };
+enum class Command:uint8_t { Scan,Connect,Saved,Disconnect,Forget,Single,Focus,Start,Pause,Resume,SetSim,SetFix,SetProfile,PairingReply,Record,RemotePulse,RemoteHold };
 bool begin();
 bool request(Command command,uint8_t value=0,const Camera::Plan& plan=Camera::Plan());
 bool confirmPairing(bool accept,uint32_t token);
+bool requestRecord(); // Toggle once; actual state comes exclusively from FF02.
+bool pressRemote(Camera::RemoteKey key);
+uint32_t holdRemote(Camera::RemoteKey key); // Zero means not queued.
+void keepRemoteHeld(uint32_t token);
+void releaseRemote(uint32_t token); // Out-of-band; also cancels a queued hold.
 void stop(); // Out-of-band: cannot be blocked by a full ordinary command queue.
 Snapshot snapshot();
 const char* linkName(Link state);
